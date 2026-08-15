@@ -414,6 +414,7 @@ let startTime = null;
 // 위험사례 카드와 보건환경 개선사례가 있는 페이지에만 최소 체류시간을 적용
 const DWELL_PAGES = new Set([3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
 const DWELL_MS = 20000;
+const VENDOR_MODE = new URLSearchParams(location.search).get("mode") === "vendor"; // 업체 포털에서 열람 확인용으로 연결된 경우 강제 체류시간 생략
 const passedDwell = new Set();
 let pageStart = 0;
 let pageTimer = null;
@@ -442,7 +443,7 @@ function renderPage() {
   clearInterval(pageTimer);
   pageStart = Date.now();
   updateNextBtn();
-  if (DWELL_PAGES.has(idx) && !passedDwell.has(idx)) {
+  if ((DWELL_PAGES.has(idx) && !VENDOR_MODE) && !passedDwell.has(idx)) {
     pageTimer = setInterval(updateNextBtn, 250);
   }
 }
@@ -450,7 +451,7 @@ function renderPage() {
 function updateNextBtn() {
   const btn = document.getElementById("nextBtn");
   const label = nextBtnLabel();
-  if (!DWELL_PAGES.has(idx) || passedDwell.has(idx)) {
+  if (!(DWELL_PAGES.has(idx) && !VENDOR_MODE) || passedDwell.has(idx)) {
     btn.disabled = false;
     btn.textContent = label;
     return;
@@ -475,7 +476,7 @@ document.getElementById("startBtn").onclick = () => {
 };
 
 document.getElementById("nextBtn").onclick = () => {
-  if (DWELL_PAGES.has(idx) && !passedDwell.has(idx)) return;
+  if ((DWELL_PAGES.has(idx) && !VENDOR_MODE) && !passedDwell.has(idx)) return;
   if (idx === QUIZ_AFTER_PAGE - 1) {
     startQuiz();
     return;
