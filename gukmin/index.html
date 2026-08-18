@@ -418,7 +418,7 @@ let startTime = null;
 
 // 위험사례 카드가 있는 9개 페이지(사무실~체육공원)만 최소 체류시간을 적용
 const DWELL_PAGES = new Set([3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
-const DWELL_MS = 1000;
+const DWELL_MS = 20000;
 const VENDOR_MODE = new URLSearchParams(location.search).get("mode") === "vendor"; // 업체 포털에서 열람 확인용으로 연결된 경우 강제 체류시간 생략 // test mode — revert to 10000 after testing
 const passedDwell = new Set();
 let pageStart = 0;
