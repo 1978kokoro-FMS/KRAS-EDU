@@ -56,11 +56,11 @@
     #printArea { display: block !important; }
   }
   .cert-page {
-    width: 210mm; min-height: 297mm; padding: 20mm; box-sizing: border-box;
-    border: 10px solid var(--navy); page-break-after: always;
+    width: 210mm; height: 297mm; padding: 20mm; box-sizing: border-box;
+    border: 10px solid var(--navy); page-break-after: always; overflow: hidden;
   }
   .cert-page:last-child { page-break-after: auto; }
-  .cert-page .cert-frame { border: 1px solid #ccc; padding: 24px; height: 100%; display: flex; flex-direction: column; }
+  .cert-page .cert-frame { border: 1px solid #ccc; padding: 24px; box-sizing: border-box; height: 100%; }
   .cert-page h1.cert-title { text-align: center; font-size: 32px; letter-spacing: 12px; margin: 12px 0 4px; color: var(--navy); }
   .cert-page .sub { text-align: center; color: #555; font-size: 13px; margin-bottom: 4px; }
   .cert-page .team { text-align: center; color: var(--gray); font-size: 12px; margin-bottom: 32px; }
@@ -68,7 +68,7 @@
   .cert-page td { padding: 12px 10px; border-bottom: 1px solid #ddd; }
   .cert-page td.label { width: 130px; font-weight: bold; color: #333; background: #f7f8fa; }
   .cert-page .statement { text-align: center; font-size: 14px; line-height: 1.8; color: #333; margin-top: 30px; }
-  .cert-page .sigbox { margin-top: auto; text-align: right; padding-top: 24px; }
+  .cert-page .sigbox { margin-top: 60px; text-align: right; padding-top: 24px; }
   .cert-page .sig-label { font-size: 11px; color: #888; margin-bottom: 6px; }
   .cert-page .sigbox img { height: 64px; border-bottom: 1px solid #333; }
 </style>
