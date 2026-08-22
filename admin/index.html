@@ -50,10 +50,10 @@
 
   /* printable certificate area, hidden on screen */
   #printArea { display: none; }
+  @page { size: A4; margin: 0; }
   @media print {
-    body * { visibility: hidden; }
-    #printArea, #printArea * { visibility: visible; }
-    #printArea { display: block; position: absolute; left: 0; top: 0; }
+    #gate, #app { display: none !important; }
+    #printArea { display: block !important; }
   }
   .cert-page {
     width: 210mm; min-height: 297mm; padding: 20mm; box-sizing: border-box;
@@ -238,7 +238,18 @@ function printRecords(rows) {
       </div>
     </div>
   `).join("");
-  window.print();
+
+  const imgs = Array.from(area.querySelectorAll("img"));
+  Promise.all(
+    imgs.map((img) =>
+      img.complete
+        ? Promise.resolve()
+        : new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve;
+          })
+    )
+  ).then(() => window.print());
 }
 </script>
 </body>
