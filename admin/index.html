@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>이수확인서 관리자 · 의왕도시공사</title>
+<style>
+  :root {
+    --navy: #15304d;
+    --navy-dark: #0e2237;
+    --amber: #f0a202;
+    --border: #dfe4ea;
+    --offwhite: #f4f6f8;
+    --gray: #6b7684;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    background: var(--navy-dark);
+    color: #1f2430;
+  }
+
+  #gate { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  #gate .box { background: #fff; border-radius: 12px; padding: 36px 32px; width: 320px; text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,.3); }
+  #gate h1 { font-size: 18px; margin: 0 0 18px; color: var(--navy); }
+  #gate input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; margin-bottom: 12px; }
+  #gate button { width: 100%; padding: 10px; border: none; border-radius: 8px; background: var(--navy); color: #fff; font-size: 15px; cursor: pointer; }
+  #gate .err { color: #d33; font-size: 13px; margin-top: 8px; min-height: 16px; }
+
+  #app { display: none; max-width: 1180px; margin: 0 auto; min-height: 100vh; background: #fff; }
+  header { padding: 24px 28px; background: var(--navy-dark); color: #fff; }
+  header h1 { margin: 0 0 4px; font-size: 20px; }
+  header p { margin: 0; color: #aebbc9; font-size: 13px; }
+  main { padding: 20px 24px 60px; }
+
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+  .toolbar select, .toolbar input { padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
+  .toolbar button { padding: 8px 14px; border: none; border-radius: 6px; background: var(--amber); color: #1f2430; font-weight: bold; cursor: pointer; font-size: 14px; }
+  .toolbar button:hover { opacity: .9; }
+  .count { font-size: 13px; color: var(--gray); margin-left: auto; }
+
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+  table.list { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  table.list th, table.list td { padding: 9px 10px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+  table.list th { background: var(--offwhite); color: #333; }
+  table.list tr:hover { background: #fafbfc; }
+  table.list button.row-print { padding: 5px 10px; border: 1px solid var(--navy); background: #fff; color: var(--navy); border-radius: 5px; cursor: pointer; font-size: 12.5px; }
+  .empty, .loading { padding: 40px; text-align: center; color: var(--gray); }
+
+  /* printable certificate area, hidden on screen */
+  #printArea { display: none; }
+  @media print {
+    body * { visibility: hidden; }
+    #printArea, #printArea * { visibility: visible; }
+    #printArea { display: block; position: absolute; left: 0; top: 0; }
+  }
+  .cert-page {
+    width: 210mm; min-height: 297mm; padding: 20mm; box-sizing: border-box;
+    border: 10px solid var(--navy); page-break-after: always;
+  }
+  .cert-page:last-child { page-break-after: auto; }
+  .cert-page .cert-frame { border: 1px solid #ccc; padding: 24px; height: 100%; display: flex; flex-direction: column; }
+  .cert-page h1.cert-title { text-align: center; font-size: 32px; letter-spacing: 12px; margin: 12px 0 4px; color: var(--navy); }
+  .cert-page .sub { text-align: center; color: #555; font-size: 13px; margin-bottom: 4px; }
+  .cert-page .team { text-align: center; color: var(--gray); font-size: 12px; margin-bottom: 32px; }
+  .cert-page table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .cert-page td { padding: 12px 10px; border-bottom: 1px solid #ddd; }
+  .cert-page td.label { width: 130px; font-weight: bold; color: #333; background: #f7f8fa; }
+  .cert-page .statement { text-align: center; font-size: 14px; line-height: 1.8; color: #333; margin-top: 30px; }
+  .cert-page .sigbox { margin-top: auto; text-align: right; padding-top: 24px; }
+  .cert-page .sig-label { font-size: 11px; color: #888; margin-bottom: 6px; }
+  .cert-page .sigbox img { height: 64px; border-bottom: 1px solid #333; }
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div class="box">
+    <h1>관리자 인증</h1>
+    <input type="password" id="pwInput" placeholder="비밀번호" />
+    <button id="pwBtn">확인</button>
+    <div class="err" id="pwErr"></div>
+  </div>
+</div>
+
+<div id="app">
+  <header>
+    <h1>전체 이수확인서 관리</h1>
+    <p>팀별 위험성평가 사후교육 이수 기록 조회 및 인쇄</p>
+  </header>
+  <main>
+    <div class="toolbar">
+      <select id="teamFilter"><option value="">전체 팀</option></select>
+      <input type="text" id="searchInput" placeholder="이름/부서 검색" />
+      <button id="printAllBtn">필터 결과 전체 인쇄</button>
+      <span class="count" id="countText"></span>
+    </div>
+    <div class="table-wrap">
+      <table class="list">
+        <thead>
+          <tr><th>팀</th><th>성명</th><th>직급</th><th>부서</th><th>완료일시</th><th>수강시간</th><th></th></tr>
+        </thead>
+        <tbody id="listBody"></tbody>
+      </table>
+      <div class="loading" id="loadingMsg">불러오는 중...</div>
+      <div class="empty" id="emptyMsg" style="display:none;">기록이 없습니다.</div>
+    </div>
+  </main>
+</div>
+
+<div id="printArea"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// 이 비밀번호를 바꾸려면 아래 값을 수정하세요.
+const ADMIN_PASSWORD = "uuc-safety-2026";
+
+const SUPABASE_URL = "https://qiwqcylerloqxdqupgbk.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpd3FjeWxlcmxvcXhkcXVwZ2JrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0MTQxMzMsImV4cCI6MjA3NDk5MDEzM30.haR8oLJsgp_5r-EisNqxI8ASHrdh87hiAixfMt5TG6U";
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let allRows = [];
+
+function formatDuration(sec) {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  let str = "";
+  if (h > 0) str += h + "시간 ";
+  str += m + "분 " + s + "초";
+  return str;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+document.getElementById("pwBtn").onclick = tryLogin;
+document.getElementById("pwInput").addEventListener("keydown", (e) => { if (e.key === "Enter") tryLogin(); });
+
+function tryLogin() {
+  const val = document.getElementById("pwInput").value;
+  if (val !== ADMIN_PASSWORD) {
+    document.getElementById("pwErr").textContent = "비밀번호가 올바르지 않습니다.";
+    return;
+  }
+  document.getElementById("gate").style.display = "none";
+  document.getElementById("app").style.display = "block";
+  loadData();
+}
+
+async function loadData() {
+  const { data, error } = await supabaseClient
+    .from("safety_manual_training_completions")
+    .select("*")
+    .order("completed_at", { ascending: false });
+
+  document.getElementById("loadingMsg").style.display = "none";
+
+  if (error) {
+    alert("데이터를 불러오지 못했습니다: " + error.message);
+    return;
+  }
+  allRows = data || [];
+  const teams = [...new Set(allRows.map((r) => r.manual_title))].sort();
+  const teamFilter = document.getElementById("teamFilter");
+  teams.forEach((t) => {
+    const opt = document.createElement("option");
+    opt.value = t;
+    opt.textContent = t;
+    teamFilter.appendChild(opt);
+  });
+  renderList();
+}
+
+function getFiltered() {
+  const team = document.getElementById("teamFilter").value;
+  const q = document.getElementById("searchInput").value.trim().toLowerCase();
+  return allRows.filter((r) => {
+    if (team && r.manual_title !== team) return false;
+    if (q && !(r.name.toLowerCase().includes(q) || r.department.toLowerCase().includes(q))) return false;
+    return true;
+  });
+}
+
+function renderList() {
+  const rows = getFiltered();
+  const body = document.getElementById("listBody");
+  body.innerHTML = "";
+  document.getElementById("emptyMsg").style.display = rows.length ? "none" : "block";
+  document.getElementById("countText").textContent = rows.length + "건";
+  rows.forEach((r) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      "<td>" + escapeHtml(r.manual_title) + "</td>" +
+      "<td>" + escapeHtml(r.name) + "</td>" +
+      "<td>" + escapeHtml(r.position) + "</td>" +
+      "<td>" + escapeHtml(r.department) + "</td>" +
+      "<td>" + new Date(r.completed_at).toLocaleString("ko-KR") + "</td>" +
+      "<td>" + formatDuration(r.duration_seconds) + "</td>" +
+      '<td><button class="row-print" data-id="' + r.id + '">인쇄</button></td>';
+    body.appendChild(tr);
+  });
+  body.querySelectorAll(".row-print").forEach((btn) => {
+    btn.onclick = () => printRecords(allRows.filter((r) => r.id === btn.dataset.id));
+  });
+}
+
+document.getElementById("teamFilter").onchange = renderList;
+document.getElementById("searchInput").oninput = renderList;
+document.getElementById("printAllBtn").onclick = () => printRecords(getFiltered());
+
+function printRecords(rows) {
+  if (!rows.length) {
+    alert("인쇄할 기록이 없습니다.");
+    return;
+  }
+  const area = document.getElementById("printArea");
+  area.innerHTML = rows.map((r) => `
+    <div class="cert-page">
+      <div class="cert-frame">
+        <h1 class="cert-title">수 료 증</h1>
+        <div class="sub">위험성평가 사후교육</div>
+        <div class="team">${escapeHtml(r.manual_title)}</div>
+        <table>
+          <tr><td class="label">성명</td><td>${escapeHtml(r.name)}</td></tr>
+          <tr><td class="label">직급</td><td>${escapeHtml(r.position)}</td></tr>
+          <tr><td class="label">부서명</td><td>${escapeHtml(r.department)}</td></tr>
+          <tr><td class="label">수강시간</td><td>${formatDuration(r.duration_seconds)}</td></tr>
+          <tr><td class="label">완료일시</td><td>${new Date(r.completed_at).toLocaleString("ko-KR")}</td></tr>
+        </table>
+        <div class="statement">위 사람은 위험성평가 사후교육 과정을 성실히 이수하였음을 증명합니다.</div>
+        <div class="sigbox">
+          <div class="sig-label">확인자 서명</div>
+          <img src="${r.signature_data}" alt="서명" />
+        </div>
+      </div>
+    </div>
+  `).join("");
+  window.print();
+}
+</script>
+</body>
+</html>
